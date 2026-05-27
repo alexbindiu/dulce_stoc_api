@@ -35,8 +35,8 @@ import { ChatModule } from './chat/chat.module';
     StatisticsModule,
     GeneratorModule,
     OrdersModule,
-    MongooseModule.forRoot('mongodb://127.0.0.1:27017/dulcestoc-chat'),
-    ChatModule,
+    //MongooseModule.forRoot('mongodb://127.0.0.1:27017/dulcestoc-chat'),
+    //ChatModule,
   ],
 })
 export class AppModule {}
