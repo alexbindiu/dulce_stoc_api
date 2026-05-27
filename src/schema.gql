@@ -1,0 +1,195 @@
+# ------------------------------------------------------
+# THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
+# ------------------------------------------------------
+
+type BatchAddedPayloadGql {
+  products: [Product!]!
+  stats: BatchStats!
+}
+
+type BatchStats {
+  generated: Int!
+  total: Int!
+}
+
+enum Category {
+  Croissant
+  Ecler
+  Prajitura
+  Tarta
+  Tort
+}
+
+type CategoryStat {
+  category: Category!
+  count: Int!
+  totalStock: Int!
+  totalValue: Float!
+}
+
+input CreateOrderInput {
+  customerName: String!
+  customerPhone: String
+  items: [CreateOrderItemInput!]!
+  notes: String
+  status: OrderStatus = PENDING
+}
+
+input CreateOrderItemInput {
+  productId: ID!
+  quantity: Int!
+}
+
+input CreateProductInput {
+  category: Category!
+  description: String = ""
+  ingredients: [String!] = []
+  isActive: Boolean = true
+  name: String!
+  pricePerUnit: Float!
+  stock: Int!
+}
+
+type GeneratorStatusGql {
+  batchSize: Int!
+  intervalMs: Int!
+  running: Boolean!
+  startedAt: String
+  totalGenerated: Int!
+}
+
+type Mutation {
+  createOrder(input: CreateOrderInput!): Order!
+  createProduct(input: CreateProductInput!): Product!
+  deleteOrder(id: ID!): Boolean!
+  deleteProduct(id: ID!): Boolean!
+  startGenerator(batchSize: Int, intervalMs: Int): GeneratorStatusGql!
+  stopGenerator: GeneratorStatusGql!
+  updateOrder(id: ID!, input: UpdateOrderInput!): Order!
+  updateProduct(id: ID!, input: UpdateProductInput!): Product!
+}
+
+type Order {
+  createdAt: String!
+  customerName: String!
+  customerPhone: String
+  id: ID!
+  items: [OrderItem!]!
+  notes: String
+  status: OrderStatus!
+  totalItems: Int!
+  totalValue: Float!
+  updatedAt: String!
+  userId: String!
+}
+
+type OrderItem {
+  id: ID!
+  orderId: ID!
+  product: Product
+  productId: ID!
+  quantity: Int!
+  subtotal: Float!
+  unitPrice: Float!
+}
+
+type OrderStats {
+  averageOrderValue: Float!
+  cancelledOrders: Int!
+  completedOrders: Int!
+  confirmedOrders: Int!
+  pendingOrders: Int!
+  revenueByProduct: [ProductRevenue!]!
+  totalOrders: Int!
+  totalRevenue: Float!
+}
+
+"""Lifecycle status of a customer order"""
+enum OrderStatus {
+  CANCELLED
+  COMPLETED
+  CONFIRMED
+  PENDING
+}
+
+type Product {
+  category: Category!
+  createdAt: String!
+  description: String!
+  id: ID!
+  ingredients: [String!]!
+  isActive: Boolean!
+  name: String!
+  pricePerUnit: Float!
+  stock: Int!
+  updatedAt: String!
+  userId: String!
+}
+
+input ProductQueryInput {
+  activeOnly: Boolean
+  category: Category
+  page: Int = 1
+  pageSize: Int = 12
+  search: String
+}
+
+type ProductRevenue {
+  category: String!
+  productId: String!
+  productName: String!
+  totalQuantity: Int!
+  totalRevenue: Float!
+}
+
+type ProductsPage {
+  data: [Product!]!
+  hasNextPage: Boolean!
+  page: Int!
+  pageSize: Int!
+  total: Int!
+  totalPages: Int!
+}
+
+type Query {
+  generatorStatus: GeneratorStatusGql!
+  order(id: ID!): Order!
+  orders: [Order!]!
+  product(id: ID!): Product
+  products(query: ProductQueryInput): ProductsPage!
+  statistics: StatisticsSummary!
+}
+
+type StatisticsSummary {
+  activeProducts: Int!
+  averagePrice: Float!
+  byCategory: [CategoryStat!]!
+  inactiveProducts: Int!
+  orders: OrderStats!
+  outOfStockProducts: Int!
+  totalProducts: Int!
+  totalStock: Int!
+  totalStockValue: Float!
+}
+
+type Subscription {
+  generatorStatusChanged: GeneratorStatusGql!
+  productsBatchAdded: BatchAddedPayloadGql!
+}
+
+input UpdateOrderInput {
+  customerName: String
+  customerPhone: String
+  notes: String
+  status: OrderStatus
+}
+
+input UpdateProductInput {
+  category: Category
+  description: String = ""
+  ingredients: [String!] = []
+  isActive: Boolean = true
+  name: String
+  pricePerUnit: Float
+  stock: Int
+}
