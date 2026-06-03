@@ -8,8 +8,8 @@ import { AuditInterceptor } from './auth/interceptors/audit.interceptor';
 import { ObservationList } from './auth/entities/observation-list.entity';
 
 async function bootstrap() {
-  // 1. Create a standard HTTP app (Render handles HTTPS for you)
-  const app = await NestFactory.create(AppModule);
+  // 1. ELIMINĂ citirea certificatelor fs.readFileSync și pornește o aplicație HTTP normală:
+  const app = await NestFactory.create(AppModule); // FĂRĂ { httpsOptions } aici!
 
   app.setGlobalPrefix('api');
   app.useGlobalPipes(
@@ -22,7 +22,7 @@ async function bootstrap() {
   );
   app.enableCors({ origin: '*' });
 
-  // Swagger for REST endpoints
+  // Swagger
   const config = new DocumentBuilder()
     .setTitle('DulceStoc API')
     .setDescription('REST + GraphQL backend for patisserie inventory')
@@ -32,17 +32,12 @@ async function bootstrap() {
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('docs', app, document);
 
-  // 2. Bind to 0.0.0.0 and use Render's dynamic PORT
-  await app.listen(process.env.PORT ?? 3000, '0.0.0.0');
-  
-  const url = `http://localhost:${process.env.PORT ?? 3000}`;
-  console.log(`\n🚀 DulceStoc API running`);
-  console.log(`   REST:    ${url}/api`);
-  console.log(`   GraphQL: ${url}/graphql`);
-  console.log(`   Swagger: ${url}/docs\n`);
-
+  // Interceptoarele trebuie configurate ÎNAINTE de app.listen
   const auditLogRepo = app.get(getRepositoryToken(AuditLog));
   const obsListRepo = app.get(getRepositoryToken(ObservationList)); 
   app.useGlobalInterceptors(new AuditInterceptor(auditLogRepo, obsListRepo));
+
+  // 2. Ascultă pe portul oferit de Railway și pe host-ul 0.0.0.0
+  await app.listen(process.env.PORT ?? 3000, '0.0.0.0');
 }
 bootstrap();
