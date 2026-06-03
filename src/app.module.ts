@@ -18,7 +18,7 @@ import { ChatModule } from './chat/chat.module';
     // Configurarea Bazei de Date Relaționale
     TypeOrmModule.forRoot({
       type: 'sqlite',
-      database: join(process.cwd(), 'dulcestoc.sqlite'),
+      database: process.env.DATABASE_PATH ?? join(process.cwd(), 'dulcestoc.sqlite'),
       // Folosim glob pattern pentru a încărca entitățile absolut automat
       entities: [join(__dirname, '**', '*.entity.{ts,js}')],
       synchronize: true, // Creează tabelele automat
@@ -35,7 +35,7 @@ import { ChatModule } from './chat/chat.module';
     StatisticsModule,
     GeneratorModule,
     OrdersModule,
-    MongooseModule.forRoot('mongodb://mongo:wUZfwgAqTmvFkpuPVuJQJxgfOqVyAqds@mongodb.railway.internal:27017/railway?authSource=admin'),
+    MongooseModule.forRoot(process.env.MONGO_URI ?? 'mongodb://mongo:wUZfwgAqTmvFkpuPVuJQJxgfOqVyAqds@mongodb.railway.internal:27017/railway?authSource=admin'),
     ChatModule,
   ],
 })
