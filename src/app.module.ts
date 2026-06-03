@@ -35,7 +35,7 @@ import { ChatModule } from './chat/chat.module';
     StatisticsModule,
     GeneratorModule,
     OrdersModule,
-    MongooseModule.forRoot('mongodb://mongo:wUZfwgAqTmvFkpuPVuJQJxgfOqVyAqds@mongodb.railway.internal:27017'),
+    MongooseModule.forRoot('mongodb://mongo:wUZfwgAqTmvFkpuPVuJQJxgfOqVyAqds@mongodb.railway.internal:27017/railway?authSource=admin'),
     ChatModule,
   ],
 })
