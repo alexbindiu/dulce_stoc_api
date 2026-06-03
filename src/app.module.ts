@@ -25,7 +25,7 @@ import { ChatModule } from './chat/chat.module';
     }),
     GraphQLModule.forRoot<ApolloDriverConfig>({
       driver: ApolloDriver,
-      autoSchemaFile: join(process.cwd(), 'src/schema.gql'),
+      autoSchemaFile: true, // <--- SCHIMBĂ AICI! 'true' generează schema în memorie și elimină dependența de folderul /src
       sortSchema: true,
       subscriptions: { 'graphql-ws': true },
       context: ({ req }) => ({ req }),
