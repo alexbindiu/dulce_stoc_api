@@ -108,10 +108,11 @@ export class AuthService implements OnModuleInit {
 
     console.log(`Sending OTP ${otp} to ${user.email}`);
 
-    return { 
-      message: 'OTP trimis pe email. Vă rugăm să verificați.', 
-      requiresOTP: true, 
-      email: user.email 
+    return {
+      message: 'OTP trimis pe email. Vă rugăm să verificați.',
+      requiresOTP: true,
+      email: user.email,
+      otp, // DEV/DEMO: expus și în răspuns ca să apară în consola din browser
     };
   }
 
