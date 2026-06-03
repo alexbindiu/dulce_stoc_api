@@ -35,7 +35,7 @@ import { ChatModule } from './chat/chat.module';
     StatisticsModule,
     GeneratorModule,
     OrdersModule,
-    MongooseModule.forRoot(process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/dulcestoc'),
+    MongooseModule.forRoot('mongodb://mongo:wUZfwgAqTmvFkpuPVuJQJxgfOqVyAqds@mongodb.railway.internal:27017'),
     ChatModule,
   ],
 })
