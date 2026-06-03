@@ -6,18 +6,10 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import { AuditLog } from './auth/entities/audit-log.entity';
 import { AuditInterceptor } from './auth/interceptors/audit.interceptor';
 import { ObservationList } from './auth/entities/observation-list.entity';
-import * as fs from 'fs';
-import * as path from 'path';
 
 async function bootstrap() {
-  // Read certificates
-  const httpsOptions = {
-    key: fs.readFileSync(path.join(__dirname, '..', 'server.key')),
-    cert: fs.readFileSync(path.join(__dirname, '..', 'server.crt')),
-  };
-
-  // Pass httpsOptions to NestFactory
-  const app = await NestFactory.create(AppModule, { httpsOptions });
+  // 1. Create a standard HTTP app (Render handles HTTPS for you)
+  const app = await NestFactory.create(AppModule);
 
   app.setGlobalPrefix('api');
   app.useGlobalPipes(
@@ -40,7 +32,9 @@ async function bootstrap() {
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('docs', app, document);
 
+  // 2. Bind to 0.0.0.0 and use Render's dynamic PORT
   await app.listen(process.env.PORT ?? 3000, '0.0.0.0');
+  
   const url = `http://localhost:${process.env.PORT ?? 3000}`;
   console.log(`\n🚀 DulceStoc API running`);
   console.log(`   REST:    ${url}/api`);
