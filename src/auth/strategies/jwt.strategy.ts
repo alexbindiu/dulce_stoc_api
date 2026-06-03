@@ -6,6 +6,7 @@ import { JWT_SECRET } from '../auth.constants';
 export interface JwtPayload {
   sub: string;
   email: string;
+  role?: string;
   iat?: number;
   exp?: number;
 }
@@ -13,6 +14,7 @@ export interface JwtPayload {
 export interface RequestUser {
   id: string;
   email: string;
+  role?: string;
 }
 
 @Injectable()
@@ -27,6 +29,6 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
 
   // Return value is attached to request.user by Passport
   validate(payload: JwtPayload): RequestUser {
-    return { id: payload.sub, email: payload.email };
+    return { id: payload.sub, email: payload.email, role: payload.role };
   }
 }
