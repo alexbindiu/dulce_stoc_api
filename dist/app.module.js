@@ -45,7 +45,7 @@ exports.AppModule = AppModule = __decorate([
             statistics_module_1.StatisticsModule,
             generator_module_1.GeneratorModule,
             orders_module_1.OrdersModule,
-            mongoose_1.MongooseModule.forRoot('mongodb://mongo:wUZfwgAqTmvFkpuPVuJQJxgfOqVyAqds@mongodb.railway.internal:27017/railway?authSource=admin/dulcestoc-chat'),
+            mongoose_1.MongooseModule.forRoot('mongodb://mongo:wUZfwgAqTmvFkpuPVuJQJxgfOqVyAqds@mongodb.railway.internal:27017/dulcestoc-chat?authSource=admin'),
             chat_module_1.ChatModule,
         ],
     })
