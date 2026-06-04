@@ -62,7 +62,7 @@ export class OrdersService {
 
     const [data, total] = await this.orderRepo.findAndCount({
       where,
-      relations: ['items'], // Aduce automat și item-urile din DB
+      relations: ['items', 'items.product'], // Aduce și item-urile, și produsul fiecărui item
       skip: (page - 1) * pageSize,
       take: pageSize,
       order: { createdAt: 'DESC' }
@@ -73,7 +73,7 @@ export class OrdersService {
   }
 
   async findOne(userId: string, id: string): Promise<Order> {
-    const order = await this.orderRepo.findOne({ where: { id, userId }, relations: ['items'] });
+    const order = await this.orderRepo.findOne({ where: { id, userId }, relations: ['items', 'items.product'] });
     if (!order) throw new NotFoundException(`Comanda nu a fost găsită.`);
     return order;
   }
