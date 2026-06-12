@@ -10,5 +10,8 @@ export class BusinessProfile {
   @Field() county: string;
   @Field({ nullable: true }) phone?: string;
   @Field({ nullable: true }) description?: string;
+  @Field({ nullable: true }) productionScale?: string;
+  @Field(() => [String], { nullable: true }) dietaryOptions?: string[];
+  @Field({ nullable: true }) specialties?: string;
   @Field(() => Int) productCount: number;
 }

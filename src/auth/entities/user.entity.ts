@@ -46,6 +46,21 @@ export class User {
   @Column({ nullable: true })
   description?: string;
 
+  // Producție: 'Casă' | 'Scară mică' | 'Scară mare'
+  @Field({ nullable: true })
+  @Column({ nullable: true })
+  productionScale?: string;
+
+  // Opțiuni dietetice: ['Vegan', 'Fără gluten', ...]
+  @Field(() => [String], { nullable: true })
+  @Column({ type: 'simple-array', nullable: true })
+  dietaryOptions?: string[];
+
+  // Specialități / descriere scurtă a ofertei
+  @Field({ nullable: true })
+  @Column({ nullable: true })
+  specialties?: string;
+
   // RELAȚIA CU ROLURILE:
   @ManyToOne(() => Role, (role) => role.users, { eager: true, nullable: true })
   role: Role;

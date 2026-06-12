@@ -59,4 +59,14 @@ export class CreateProductDto {
     return value;
   })
   isActive?: boolean = true;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(40)
+  manufactureDate?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(40)
+  expiryDate?: string;
 }

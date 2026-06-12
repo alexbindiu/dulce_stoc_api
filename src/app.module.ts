@@ -12,6 +12,7 @@ import { PubSubModule } from './pubsub.module';
 import { MongooseModule } from '@nestjs/mongoose';
 import { ChatModule } from './chat/chat.module';
 import { MarketplaceModule } from './marketplace/marketplace.module';
+import { AiModule } from './ai/ai.module';
 import { AppController } from './app.controller';
 
 @Module({
@@ -40,6 +41,7 @@ import { AppController } from './app.controller';
     MongooseModule.forRoot(process.env.MONGO_URI ?? 'mongodb://mongo:wUZfwgAqTmvFkpuPVuJQJxgfOqVyAqds@mongodb.railway.internal:27017/railway?authSource=admin'),
     ChatModule,
     MarketplaceModule,
+    AiModule,
   ],
   controllers: [AppController],
 })

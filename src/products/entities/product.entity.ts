@@ -32,6 +32,9 @@ export class Product {
   @Column('simple-array') // Va fi salvat ca text în SQLite
   ingredients: string[];
 
+  @Field({ nullable: true }) @Column({ nullable: true }) manufactureDate?: string;
+  @Field({ nullable: true }) @Column({ nullable: true }) expiryDate?: string;
+
   @Field() @Column({ default: true }) isActive: boolean;
   @Field() @CreateDateColumn() createdAt: string;
   @Field() @UpdateDateColumn() updatedAt: string;

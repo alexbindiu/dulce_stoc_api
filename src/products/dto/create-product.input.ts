@@ -49,4 +49,16 @@ export class CreateProductInput {
   @IsOptional()
   @IsBoolean()
   isActive?: boolean;
+
+  @Field({ nullable: true })
+  @IsOptional()
+  @IsString()
+  @MaxLength(40)
+  manufactureDate?: string;
+
+  @Field({ nullable: true })
+  @IsOptional()
+  @IsString()
+  @MaxLength(40)
+  expiryDate?: string;
 }

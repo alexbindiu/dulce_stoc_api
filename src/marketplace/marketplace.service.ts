@@ -78,6 +78,9 @@ export class MarketplaceService {
       county: u.county,
       phone: u.phone,
       description: u.description,
+      productionScale: u.productionScale,
+      dietaryOptions: u.dietaryOptions,
+      specialties: u.specialties,
       productCount,
     };
   }

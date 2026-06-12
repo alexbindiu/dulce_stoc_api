@@ -1,4 +1,4 @@
-import { IsEmail, IsIn, IsNotEmpty, IsOptional, IsString, MaxLength, MinLength } from 'class-validator';
+import { IsArray, IsEmail, IsIn, IsNotEmpty, IsOptional, IsString, MaxLength, MinLength } from 'class-validator';
 
 export const BUSINESS_TYPES = ['Patiserie', 'Cofetărie', 'Brutărie', 'Altele'] as const;
 export type BusinessType = (typeof BUSINESS_TYPES)[number];
@@ -42,4 +42,19 @@ export class RegisterDto {
   @IsString()
   @MaxLength(500, { message: 'Descrierea poate avea maxim 500 de caractere.' })
   description?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(40)
+  productionScale?: string;
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  dietaryOptions?: string[];
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(200, { message: 'Specialitățile pot avea maxim 200 de caractere.' })
+  specialties?: string;
 }
