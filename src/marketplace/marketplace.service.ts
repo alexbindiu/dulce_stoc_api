@@ -1,0 +1,84 @@
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { User } from '../auth/entities/user.entity';
+import { Product } from '../products/entities/product.entity';
+import { BusinessProfile } from './dto/business-profile.type';
+
+// Un "business" = un cont care NU este vizitator (businessName != 'N/A')
+const NOT_CLIENT = 'N/A';
+
+@Injectable()
+export class MarketplaceService {
+  constructor(
+    @InjectRepository(User) private readonly userRepo: Repository<User>,
+    @InjectRepository(Product) private readonly productRepo: Repository<Product>,
+  ) {}
+
+  async getCities(): Promise<string[]> {
+    const rows = await this.userRepo
+      .createQueryBuilder('u')
+      .select('DISTINCT u.county', 'county')
+      .where('u.businessName != :na', { na: NOT_CLIENT })
+      .orderBy('u.county', 'ASC')
+      .getRawMany();
+    return rows.map((r) => r.county).filter(Boolean);
+  }
+
+  async getBusinesses(city?: string): Promise<BusinessProfile[]> {
+    const qb = this.userRepo
+      .createQueryBuilder('u')
+      .where('u.businessName != :na', { na: NOT_CLIENT });
+    if (city) qb.andWhere('u.county = :city', { city });
+    const users = await qb.orderBy('u.businessName', 'ASC').getMany();
+
+    const counts = await this.productCounts(users.map((u) => u.id));
+    return users.map((u) => this.toProfile(u, counts.get(u.id) ?? 0));
+  }
+
+  async getBusiness(id: string): Promise<BusinessProfile> {
+    const user = await this.userRepo.findOne({ where: { id } });
+    if (!user || user.businessName === NOT_CLIENT) {
+      throw new NotFoundException('Afacerea nu a fost găsită.');
+    }
+    const counts = await this.productCounts([id]);
+    return this.toProfile(user, counts.get(id) ?? 0);
+  }
+
+  async getBusinessProducts(businessId: string): Promise<Product[]> {
+    return this.productRepo.find({
+      where: { userId: businessId, isActive: true },
+      order: { createdAt: 'DESC' },
+    });
+  }
+
+  // Numărul de produse active per afacere, într-un singur query (evită N+1)
+  private async productCounts(businessIds: string[]): Promise<Map<string, number>> {
+    if (businessIds.length === 0) return new Map();
+    const rows = await this.productRepo
+      .createQueryBuilder('p')
+      .select('p.userId', 'userId')
+      .addSelect('COUNT(*)', 'cnt')
+      .where('p.isActive = :a', { a: true })
+      .andWhere('p.userId IN (:...ids)', { ids: businessIds })
+      .groupBy('p.userId')
+      .getRawMany();
+    const map = new Map<string, number>();
+    for (const r of rows) map.set(r.userId, Number(r.cnt));
+    return map;
+  }
+
+  private toProfile(u: User, productCount: number): BusinessProfile {
+    return {
+      id: u.id,
+      firstName: u.firstName,
+      lastName: u.lastName,
+      businessName: u.businessName,
+      businessType: u.businessType,
+      county: u.county,
+      phone: u.phone,
+      description: u.description,
+      productCount,
+    };
+  }
+}

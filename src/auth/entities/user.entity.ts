@@ -38,6 +38,14 @@ export class User {
   @Column()
   county: string;
 
+  @Field({ nullable: true })
+  @Column({ nullable: true })
+  phone?: string;
+
+  @Field({ nullable: true })
+  @Column({ nullable: true })
+  description?: string;
+
   // RELAȚIA CU ROLURILE:
   @ManyToOne(() => Role, (role) => role.users, { eager: true, nullable: true })
   role: Role;
