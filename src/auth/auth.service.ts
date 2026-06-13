@@ -120,24 +120,15 @@ export class AuthService implements OnModuleInit {
 
   private otpStore = new Map<string, string>(); 
 
-  async login(dto: LoginDto) {
+  async login(dto: LoginDto): Promise<AuthResult> {
     const user = await this.userRepo.findOne({ where: { email: dto.email } });
-    
+
     if (!user || !(await bcrypt.compare(dto.password, user.password))) {
       throw new UnauthorizedException('Email sau parolă incorectă.');
     }
 
-    const otp = Math.floor(100000 + Math.random() * 900000).toString();
-    this.otpStore.set(user.email, otp);
-
-    console.log(`Sending OTP ${otp} to ${user.email}`);
-
-    return {
-      message: 'OTP trimis pe email. Vă rugăm să verificați.',
-      requiresOTP: true,
-      email: user.email,
-      otp, // DEV/DEMO: expus și în răspuns ca să apară în consola din browser
-    };
+    // Fără OTP: dacă emailul și parola sunt corecte, autentificăm direct.
+    return this._toResult(user);
   }
 
   async verifyOtp(email: string, otp: string): Promise<AuthResult> {
