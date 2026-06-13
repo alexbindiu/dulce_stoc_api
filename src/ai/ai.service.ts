@@ -41,7 +41,7 @@ export class AiService {
       }
     }
     // Fallback: o mică pauză ca experiența să pară că a consultat un LLM extern.
-    await this.sleep(2000);
+    await this.sleep(3500);
     return this.keywordFallback(query, businesses);
   }
 
