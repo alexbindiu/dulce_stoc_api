@@ -19,6 +19,11 @@ export class AuthController {
     return this.authService.login(dto);
   }
 
+  @Get('demo-accounts')
+  getDemoAccounts() {
+    return this.authService.getDemoAccounts();
+  }
+
   @Get('audit-logs')
   getAuditLogs() {
     return this.authService.getAuditLogs();

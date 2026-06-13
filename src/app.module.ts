@@ -13,6 +13,7 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { ChatModule } from './chat/chat.module';
 import { MarketplaceModule } from './marketplace/marketplace.module';
 import { AiModule } from './ai/ai.module';
+import { SeedModule } from './seed/seed.module';
 import { AppController } from './app.controller';
 
 @Module({
@@ -42,6 +43,7 @@ import { AppController } from './app.controller';
     ChatModule,
     MarketplaceModule,
     AiModule,
+    SeedModule,
   ],
   controllers: [AppController],
 })

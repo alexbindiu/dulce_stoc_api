@@ -61,6 +61,10 @@ export class User {
   @Column({ nullable: true })
   specialties?: string;
 
+  // Marcaj pentru conturile demo (apar pe panoul de login). Nu se expune în GraphQL.
+  @Column({ default: false })
+  isDemo?: boolean;
+
   // RELAȚIA CU ROLURILE:
   @ManyToOne(() => Role, (role) => role.users, { eager: true, nullable: true })
   role: Role;

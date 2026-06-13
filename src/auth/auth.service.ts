@@ -50,9 +50,10 @@ export class AuthService implements OnModuleInit {
     const adminEmail = 'admin@patiserie.ro';
     if (!(await this.userRepo.findOne({ where: { email: adminEmail } }))) {
       await this.userRepo.save(this.userRepo.create({
-        firstName: 'Ana', lastName: 'Proprietar', email: adminEmail, 
+        firstName: 'Ana', lastName: 'Proprietar', email: adminEmail,
         password: hashedPassword, // <--- Salvăm parola hash-uită!
-        businessName: 'Patiseria Anei', businessType: 'Patiserie', county: 'Cluj', role: roleAdmin
+        businessName: 'Patiseria Anei', businessType: 'Patiserie', county: 'Cluj-Napoca', role: roleAdmin,
+        isDemo: true,
       }));
     }
 
@@ -60,11 +61,34 @@ export class AuthService implements OnModuleInit {
     const userEmail = 'client@vizitator.ro';
     if (!(await this.userRepo.findOne({ where: { email: userEmail } }))) {
       await this.userRepo.save(this.userRepo.create({
-        firstName: 'Ion', lastName: 'Client', email: userEmail, 
+        firstName: 'Ion', lastName: 'Client', email: userEmail,
         password: hashedPassword, // <--- Salvăm parola hash-uită!
-        businessName: 'N/A', businessType: 'Altele', county: 'Cluj', role: roleUser
+        businessName: 'N/A', businessType: 'Altele', county: 'Cluj-Napoca', role: roleUser,
+        isDemo: true,
       }));
     }
+
+    // Ne asigurăm că cele 2 conturi de bază sunt marcate ca demo (pentru BD existente).
+    await this.userRepo.update({ email: adminEmail }, { isDemo: true });
+    await this.userRepo.update({ email: userEmail }, { isDemo: true });
+  }
+
+  /** Lista conturilor demo afișate pe panoul de login (toate au parola `parola123`). */
+  async getDemoAccounts() {
+    const users = await this.userRepo.find({
+      where: { isDemo: true },
+      order: { businessName: 'ASC', firstName: 'ASC' },
+    });
+    return users.map((u) => ({
+      email: u.email,
+      firstName: u.firstName,
+      lastName: u.lastName,
+      kind: u.role?.name === 'ADMIN' ? 'BUSINESS' : 'CLIENT',
+      businessName: u.businessName === 'N/A' ? null : u.businessName,
+      businessType: u.businessType,
+      county: u.county,
+      password: 'parola123',
+    }));
   }
 
   async register(registerDto: RegisterDto) {
