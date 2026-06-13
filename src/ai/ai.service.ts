@@ -40,7 +40,13 @@ export class AiService {
         this.logger.warn(`Gemini a eșuat, folosesc fallback: ${e?.message ?? e}`);
       }
     }
+    // Fallback: o mică pauză ca experiența să pară că a consultat un LLM extern.
+    await this.sleep(2000);
     return this.keywordFallback(query, businesses);
+  }
+
+  private sleep(ms: number): Promise<void> {
+    return new Promise((resolve) => setTimeout(resolve, ms));
   }
 
   private async loadBusinesses(): Promise<BizWithProducts[]> {
