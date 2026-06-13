@@ -147,6 +147,34 @@ const DM_CLIENT_FOLLOW = [
   'Excelent, abia aștept să gust 😋',
 ];
 
+// ── Pentru generarea suplimentară de afaceri în orașele mari ─────────────────
+const EXTRA_TARGETS: Record<string, number> = {
+  'Cluj-Napoca': 18, 'București': 18, 'Brașov': 17,
+};
+const NAME_WORDS = [
+  'Vanilie', 'Caramel', 'Migdala', 'Bezea', 'Scorțișoara', 'Trandafir', 'Lavanda', 'Ciocolata',
+  'Mierea', 'Frișca', 'Cireașa', 'Praline', 'Boema', 'Aroma', 'Marțipan', 'Nuga', 'Cocos',
+  'Fistic', 'Afina', 'Zmeura', 'Caisa', 'Piersica', 'Vișina', 'Aluna', 'Crema', 'Visul Dulce',
+  'Inima Dulce', 'Colțul Dulce', 'Aurora', 'Délice', 'Douceur', 'Macaron', 'Eleganza',
+  'Floarea Dulce', 'Zahărel', 'Cufărul Dulce', 'Rândunica', 'Petale', 'Migdalul', 'Dulce Tentație',
+];
+const EXTRA_SPEC = [
+  'torturi personalizate', 'prăjituri de casă', 'eclere și choux', 'cheesecake artizanal',
+  'tarte cu fructe', 'foietaje proaspete', 'macarons franțuzești', 'deserturi fără zahăr',
+  'cozonaci tradiționali', 'tiramisu și deserturi italiene', 'baclava și deserturi orientale',
+  'torturi de eveniment',
+];
+const EXTRA_DESC = [
+  '{Type} de cartier cu deserturi proaspete, în {city}.',
+  'Mică {type} de familie, cu rețete clasice și ingrediente locale, în {city}.',
+  'Deserturi artizanale și torturi la comandă, în inima orașului {city}.',
+  '{Type} modernă cu accent pe ingrediente naturale, în {city}.',
+  'Prăjituri și torturi pregătite zilnic, cu drag, în {city}.',
+  'Atmosferă caldă și dulciuri fine, o {type} dragă clienților din {city}.',
+  '{Type} boutique cu un meniu mic, dar atent selecționat, în {city}.',
+  'Tradiție și creativitate — o {type} de încredere din {city}.',
+];
+
 @Injectable()
 export class SeedService implements OnApplicationBootstrap {
   private readonly logger = new Logger('SeedService');
@@ -160,6 +188,11 @@ export class SeedService implements OnApplicationBootstrap {
   ) {}
 
   async onApplicationBootstrap() {
+    await this.seedMain();
+    await this.seedExtraCities();
+  }
+
+  private async seedMain() {
     try {
       // Idempotență: dacă există deja multe afaceri demo, nu mai semănăm.
       const seededBiz = await this.userRepo
@@ -337,5 +370,120 @@ export class SeedService implements OnApplicationBootstrap {
     } catch (err) {
       this.logger.error('Seed demo a eșuat', err as Error);
     }
+  }
+
+  // ── Extra: mai multe afaceri în orașele mari (top-up idempotent) ────────────
+  private async seedExtraCities() {
+    try {
+      const roleAdmin = await this.roleRepo.findOne({ where: { name: 'ADMIN' } });
+      if (!roleAdmin) return;
+
+      // Nume deja folosite (din pool + din BD) pentru a evita duplicatele.
+      const used = new Set<string>(BUSINESSES.map((b) => b.n));
+      const existing = await this.userRepo.find({ where: { isDemo: true }, select: ['businessName'] });
+      existing.forEach((u) => used.add(u.businessName));
+
+      const pass = await bcrypt.hash('parola123', await bcrypt.genSalt(10));
+      let totalAdded = 0;
+
+      for (const [city, target] of Object.entries(EXTRA_TARGETS)) {
+        const current = await this.userRepo.createQueryBuilder('u')
+          .where('u.isDemo = :d', { d: true })
+          .andWhere('u.businessName != :na', { na: 'N/A' })
+          .andWhere('u.county = :c', { c: city })
+          .getCount();
+        const toAdd = Math.max(0, target - current);
+        if (toAdd === 0) continue;
+
+        const newBiz: User[] = [];
+        for (let i = 0; i < toAdd; i++) {
+          const name = this.uniqueBizName(used);
+          const type = pick(['Cofetărie', 'Patiserie', 'Brutărie']);
+          const diet = chance(0.3) ? pickN(['Vegan', 'Vegetarian', 'Fără gluten', 'Fără lactoză'], rint(1, 2)) : [];
+          const desc = pick(EXTRA_DESC)
+            .replace(/{Type}/g, type)
+            .replace(/{type}/g, type.toLowerCase())
+            .replace(/{city}/g, city);
+          newBiz.push(this.userRepo.create({
+            firstName: pick(FIRST), lastName: pick(LAST),
+            email: `${slug(name)}-${slug(city)}-${i}@dulcedemo.ro`,
+            password: pass,
+            businessName: name, businessType: type, county: city,
+            phone: `07${rint(20, 49)} ${rint(100, 999)} ${rint(100, 999)}`,
+            description: desc,
+            productionScale: pick(['Casă', 'Scară mică', 'Scară mică', 'Scară mare']),
+            dietaryOptions: diet.length ? diet : undefined,
+            specialties: pick(EXTRA_SPEC),
+            role: roleAdmin, isDemo: true,
+          }));
+        }
+        const saved = await this.userRepo.save(newBiz);
+
+        // Produse pentru fiecare afacere nouă.
+        for (const biz of saved) {
+          const isVegan = (biz.dietaryOptions ?? []).includes('Vegan');
+          await this.productRepo.save(this.makeProducts(biz.id, isVegan));
+        }
+
+        // Câteva comenzi pentru fiecare (customerName = nume aleator).
+        const orders: Order[] = [];
+        for (const biz of saved) {
+          const prods = await this.productRepo.find({ where: { userId: biz.id, isActive: true } });
+          if (!prods.length) continue;
+          for (let k = 0; k < rint(1, 4); k++) {
+            const items = pickN(prods, rint(1, 3)).map((p) => {
+              const quantity = rint(1, 3);
+              return { productId: p.id, quantity, unitPrice: p.pricePerUnit, subtotal: Math.round(p.pricePerUnit * quantity * 100) / 100 } as OrderItem;
+            });
+            orders.push(this.orderRepo.create({
+              userId: biz.id,
+              customerName: `${pick(FIRST)} ${pick(LAST)}`,
+              customerPhone: `07${rint(20, 49)} ${rint(100, 999)} ${rint(100, 999)}`,
+              status: pick([OrderStatus.PENDING, OrderStatus.CONFIRMED, OrderStatus.COMPLETED, OrderStatus.COMPLETED, OrderStatus.CANCELLED]),
+              items,
+              totalValue: Math.round(items.reduce((s, it) => s + it.subtotal, 0) * 100) / 100,
+              totalItems: items.reduce((s, it) => s + it.quantity, 0),
+            }));
+          }
+        }
+        if (orders.length) await this.orderRepo.save(orders);
+
+        totalAdded += saved.length;
+        this.logger.log(`Extra: +${saved.length} afaceri în ${city} (țintă ${target}).`);
+      }
+
+      if (totalAdded) this.logger.log(`Seed extra gata: +${totalAdded} afaceri în orașele mari.`);
+    } catch (err) {
+      this.logger.error('Seed extra a eșuat', err as Error);
+    }
+  }
+
+  private makeProducts(userId: string, isVegan: boolean): Product[] {
+    const pool = isVegan ? [...PRODUCTS, ...VEGAN_PRODUCTS] : PRODUCTS;
+    const chosen = pickN(pool, rint(7, 12));
+    if (isVegan) chosen.push(...pickN(VEGAN_PRODUCTS, rint(2, 3)));
+    return chosen.map((t) => this.productRepo.create({
+      userId,
+      name: t.n, category: t.cat,
+      pricePerUnit: Math.round((t.p * (0.9 + Math.random() * 0.3)) * 100) / 100,
+      stock: chance(0.12) ? 0 : rint(4, 60),
+      description: t.d, ingredients: t.ing,
+      manufactureDate: dayStr(-rint(0, 3)), expiryDate: dayStr(rint(2, 21)),
+      isActive: chance(0.92),
+    }));
+  }
+
+  private uniqueBizName(used: Set<string>): string {
+    for (let tries = 0; tries < 200; tries++) {
+      const w = pick(NAME_WORDS);
+      const p = rnd(10);
+      const name = p < 5 ? `${pick(['Cofetăria', 'Patiseria', 'Brutăria'])} ${w}`
+        : p < 7 ? `Maison ${w}`
+        : p < 9 ? `Sweet ${w}`
+        : `La ${w}`;
+      if (!used.has(name)) { used.add(name); return name; }
+    }
+    const fb = `Cofetăria ${pick(NAME_WORDS)} ${rint(1, 9999)}`;
+    used.add(fb); return fb;
   }
 }
