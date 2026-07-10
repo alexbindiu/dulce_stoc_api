@@ -54,7 +54,11 @@ export class MarketplaceService {
   }
 
   // Dulce Rescue: produse active cu reducere (aproape de expirare).
+  // În ultimele 24h înainte de expirare, produsul devine GRATIS.
   async getRescueDeals(city?: string): Promise<RescueDeal[]> {
+    const FREE_WINDOW_MS = 24 * 60 * 60 * 1000;
+    const now = Date.now();
+
     const products = await this.productRepo.find({
       where: { isActive: true, discountPercent: MoreThan(0) },
     });
@@ -69,7 +73,9 @@ export class MarketplaceService {
         const u = byId.get(p.userId);
         if (!u || u.businessName === NOT_CLIENT) return null;
         const dp = p.discountPercent ?? 0;
-        const finalPrice = Math.round(p.pricePerUnit * (1 - dp / 100) * 100) / 100;
+        const target = p.expiryDate ? new Date(`${p.expiryDate}T23:59:59`).getTime() : null;
+        const free = target !== null && target - now <= FREE_WINDOW_MS;
+        const finalPrice = free ? 0 : Math.round(p.pricePerUnit * (1 - dp / 100) * 100) / 100;
         return {
           id: p.id,
           name: p.name,
@@ -78,6 +84,7 @@ export class MarketplaceService {
           originalPrice: p.pricePerUnit,
           finalPrice,
           discountPercent: dp,
+          free,
           expiryDate: p.expiryDate,
           stock: p.stock,
           businessId: u.id,

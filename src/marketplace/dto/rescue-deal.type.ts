@@ -10,6 +10,7 @@ export class RescueDeal {
   @Field(() => Float) originalPrice: number;
   @Field(() => Float) finalPrice: number;
   @Field(() => Int) discountPercent: number;
+  @Field() free: boolean; // în ultimele 24h înainte de expirare → gratis
   @Field({ nullable: true }) expiryDate?: string;
   @Field(() => Int) stock: number;
   @Field(() => ID) businessId: string;

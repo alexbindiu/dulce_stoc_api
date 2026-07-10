@@ -488,30 +488,39 @@ export class SeedService implements OnApplicationBootstrap {
     used.add(fb); return fb;
   }
 
-  // ── Dulce Rescue: marchează niște produse cu reducere + expirare apropiată ──
+  // ── Dulce Rescue: produse cu reducere; unele expiră AZI (→ devin gratis) ────
   private async seedRescueDeals() {
     try {
-      const already = await this.productRepo
-        .createQueryBuilder('p')
-        .where('p.discountPercent > 0')
-        .getCount();
-      if (already > 0) {
-        this.logger.log(`Rescue deals deja prezente (${already}). Sar peste.`);
+      const active = await this.productRepo.find({ where: { isActive: true } });
+      if (active.length === 0) return;
+
+      const now = Date.now();
+      const HRS30 = 30 * 60 * 60 * 1000;
+      const upcomingSoon = (p: Product) => {
+        if ((p.discountPercent ?? 0) <= 0 || !p.expiryDate) return false;
+        const diff = new Date(`${p.expiryDate}T23:59:59`).getTime() - now;
+        return diff <= HRS30 && diff > -12 * 60 * 60 * 1000;
+      };
+
+      const deals = active.filter((p) => (p.discountPercent ?? 0) > 0);
+      const soon = deals.filter(upcomingSoon).length;
+
+      // Deja sănătos (destule oferte, unele expiră curând) → nu atingem nimic.
+      if (deals.length >= 10 && soon >= 3) {
+        this.logger.log(`Rescue deals sănătoase (${deals.length}, ${soon} curând). Sar peste.`);
         return;
       }
-      const products = await this.productRepo.find({ where: { isActive: true } });
-      if (products.length === 0) return;
 
-      const count = Math.min(60, Math.max(20, Math.floor(products.length * 0.18)));
-      const chosen = pickN(products, count);
-      for (const p of chosen) {
+      // Altfel (re)distribuim un set de oferte, cu ~35% care expiră azi (→ gratis).
+      const pool = deals.length >= 20 ? deals : pickN(active, Math.min(55, active.length));
+      for (const p of pool) {
         p.discountPercent = pick([20, 25, 30, 40, 50, 60]);
-        p.expiryDate = dayStr(rint(1, 5));          // expiră în 1–5 zile
+        p.expiryDate = dayStr(chance(0.35) ? 0 : rint(1, 4)); // 0 = azi → gratis
         p.manufactureDate = dayStr(-rint(1, 3));
-        if (p.stock === 0) p.stock = rint(2, 12);   // trebuie să existe stoc de „salvat"
+        if (p.stock === 0) p.stock = rint(2, 12);
       }
-      await this.productRepo.save(chosen);
-      this.logger.log(`Seed rescue: ${chosen.length} produse cu reducere aproape de expirare.`);
+      await this.productRepo.save(pool);
+      this.logger.log(`Seed rescue: ${pool.length} oferte (unele expiră azi → gratis).`);
     } catch (err) {
       this.logger.error('Seed rescue a eșuat', err as Error);
     }
