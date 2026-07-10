@@ -1,9 +1,10 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, MoreThan, In } from 'typeorm';
 import { User } from '../auth/entities/user.entity';
 import { Product } from '../products/entities/product.entity';
 import { BusinessProfile } from './dto/business-profile.type';
+import { RescueDeal } from './dto/rescue-deal.type';
 
 // Un "business" = un cont care NU este vizitator (businessName != 'N/A')
 const NOT_CLIENT = 'N/A';
@@ -50,6 +51,47 @@ export class MarketplaceService {
       where: { userId: businessId, isActive: true },
       order: { createdAt: 'DESC' },
     });
+  }
+
+  // Dulce Rescue: produse active cu reducere (aproape de expirare).
+  async getRescueDeals(city?: string): Promise<RescueDeal[]> {
+    const products = await this.productRepo.find({
+      where: { isActive: true, discountPercent: MoreThan(0) },
+    });
+    if (products.length === 0) return [];
+
+    const userIds = [...new Set(products.map((p) => p.userId))];
+    const users = await this.userRepo.find({ where: { id: In(userIds) } });
+    const byId = new Map(users.map((u) => [u.id, u]));
+
+    let deals = products
+      .map((p) => {
+        const u = byId.get(p.userId);
+        if (!u || u.businessName === NOT_CLIENT) return null;
+        const dp = p.discountPercent ?? 0;
+        const finalPrice = Math.round(p.pricePerUnit * (1 - dp / 100) * 100) / 100;
+        return {
+          id: p.id,
+          name: p.name,
+          category: p.category,
+          description: p.description,
+          originalPrice: p.pricePerUnit,
+          finalPrice,
+          discountPercent: dp,
+          expiryDate: p.expiryDate,
+          stock: p.stock,
+          businessId: u.id,
+          businessName: u.businessName,
+          businessType: u.businessType,
+          county: u.county,
+        } as RescueDeal;
+      })
+      .filter((d): d is RescueDeal => d !== null);
+
+    if (city) deals = deals.filter((d) => d.county === city);
+    // Cele care expiră cel mai curând, primele.
+    deals.sort((a, b) => (a.expiryDate ?? '9999').localeCompare(b.expiryDate ?? '9999'));
+    return deals;
   }
 
   // Numărul de produse active per afacere, într-un singur query (evită N+1)

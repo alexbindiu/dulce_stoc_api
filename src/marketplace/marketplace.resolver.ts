@@ -3,6 +3,7 @@ import { UseGuards } from '@nestjs/common';
 import { GqlAuthGuard } from '../auth/guards/gql-auth.guard';
 import { MarketplaceService } from './marketplace.service';
 import { BusinessProfile } from './dto/business-profile.type';
+import { RescueDeal } from './dto/rescue-deal.type';
 import { Product } from '../products/entities/product.entity';
 
 // Doar autentificare (fără rol) — și clienții (NORMAL_USER) pot vedea afacerile.
@@ -29,5 +30,10 @@ export class MarketplaceResolver {
   @Query(() => [Product])
   businessProducts(@Args('businessId', { type: () => ID }) businessId: string): Promise<Product[]> {
     return this.service.getBusinessProducts(businessId);
+  }
+
+  @Query(() => [RescueDeal])
+  rescueDeals(@Args('city', { nullable: true }) city?: string): Promise<RescueDeal[]> {
+    return this.service.getRescueDeals(city);
   }
 }

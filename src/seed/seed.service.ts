@@ -190,6 +190,7 @@ export class SeedService implements OnApplicationBootstrap {
   async onApplicationBootstrap() {
     await this.seedMain();
     await this.seedExtraCities();
+    await this.seedRescueDeals();
   }
 
   private async seedMain() {
@@ -485,5 +486,34 @@ export class SeedService implements OnApplicationBootstrap {
     }
     const fb = `Cofetăria ${pick(NAME_WORDS)} ${rint(1, 9999)}`;
     used.add(fb); return fb;
+  }
+
+  // ── Dulce Rescue: marchează niște produse cu reducere + expirare apropiată ──
+  private async seedRescueDeals() {
+    try {
+      const already = await this.productRepo
+        .createQueryBuilder('p')
+        .where('p.discountPercent > 0')
+        .getCount();
+      if (already > 0) {
+        this.logger.log(`Rescue deals deja prezente (${already}). Sar peste.`);
+        return;
+      }
+      const products = await this.productRepo.find({ where: { isActive: true } });
+      if (products.length === 0) return;
+
+      const count = Math.min(60, Math.max(20, Math.floor(products.length * 0.18)));
+      const chosen = pickN(products, count);
+      for (const p of chosen) {
+        p.discountPercent = pick([20, 25, 30, 40, 50, 60]);
+        p.expiryDate = dayStr(rint(1, 5));          // expiră în 1–5 zile
+        p.manufactureDate = dayStr(-rint(1, 3));
+        if (p.stock === 0) p.stock = rint(2, 12);   // trebuie să existe stoc de „salvat"
+      }
+      await this.productRepo.save(chosen);
+      this.logger.log(`Seed rescue: ${chosen.length} produse cu reducere aproape de expirare.`);
+    } catch (err) {
+      this.logger.error('Seed rescue a eșuat', err as Error);
+    }
   }
 }

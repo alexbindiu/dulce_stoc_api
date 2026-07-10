@@ -35,6 +35,9 @@ export class Product {
   @Field({ nullable: true }) @Column({ nullable: true }) manufactureDate?: string;
   @Field({ nullable: true }) @Column({ nullable: true }) expiryDate?: string;
 
+  // Dulce Rescue: reducere pentru produse aproape de expirare (0 = fără reducere)
+  @Field(() => Int, { nullable: true }) @Column({ type: 'int', nullable: true }) discountPercent?: number;
+
   @Field() @Column({ default: true }) isActive: boolean;
   @Field() @CreateDateColumn() createdAt: string;
   @Field() @UpdateDateColumn() updatedAt: string;
