@@ -1,4 +1,4 @@
-import { Injectable, Logger, OnApplicationBootstrap } from '@nestjs/common';
+import { Injectable, Logger, OnApplicationBootstrap, Optional } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { InjectModel } from '@nestjs/mongoose';
@@ -184,7 +184,7 @@ export class SeedService implements OnApplicationBootstrap {
     @InjectRepository(Role) private readonly roleRepo: Repository<Role>,
     @InjectRepository(Product) private readonly productRepo: Repository<Product>,
     @InjectRepository(Order) private readonly orderRepo: Repository<Order>,
-    @InjectModel(Message.name) private readonly messageModel: Model<Message>,
+    @Optional() @InjectModel(Message.name) private readonly messageModel?: Model<Message>,
   ) {}
 
   async onApplicationBootstrap() {
@@ -362,7 +362,7 @@ export class SeedService implements OnApplicationBootstrap {
         }
       }
 
-      await this.messageModel.insertMany(msgs, { timestamps: false });
+      if (this.messageModel) await this.messageModel.insertMany(msgs, { timestamps: false });
 
       this.logger.log(
         `Seed demo gata: ${businesses.length} afaceri, ${clients.length} clienți, ` +

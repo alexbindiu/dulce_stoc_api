@@ -12,7 +12,10 @@ import { SeedService } from './seed.service';
 @Module({
   imports: [
     TypeOrmModule.forFeature([User, Role, Product, Order, OrderItem]),
-    MongooseModule.forFeature([{ name: Message.name, schema: MessageSchema }]),
+    // Modelul de mesaje (chat) doar dacă MongoDB e configurat.
+    ...(process.env.MONGO_URI
+      ? [MongooseModule.forFeature([{ name: Message.name, schema: MessageSchema }])]
+      : []),
   ],
   providers: [SeedService],
 })

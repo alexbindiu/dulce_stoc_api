@@ -16,6 +16,12 @@ import { AiModule } from './ai/ai.module';
 import { SeedModule } from './seed/seed.module';
 import { AppController } from './app.controller';
 
+// MongoDB (chat) e OPȚIONAL: se activează doar dacă există MONGO_URI.
+// Fără el, aplicația pornește normal — doar chat-ul este dezactivat.
+const chatImports = process.env.MONGO_URI
+  ? [MongooseModule.forRoot(process.env.MONGO_URI), ChatModule]
+  : [];
+
 @Module({
   imports: [
     PubSubModule,
@@ -39,8 +45,7 @@ import { AppController } from './app.controller';
     StatisticsModule,
     GeneratorModule,
     OrdersModule,
-    MongooseModule.forRoot(process.env.MONGO_URI ?? 'mongodb://mongo:wUZfwgAqTmvFkpuPVuJQJxgfOqVyAqds@mongodb.railway.internal:27017/railway?authSource=admin'),
-    ChatModule,
+    ...chatImports,
     MarketplaceModule,
     AiModule,
     SeedModule,
